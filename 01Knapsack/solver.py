@@ -88,6 +88,8 @@ def solve_it(input_data):
 
     # depth-first search
     try:
+        import sys
+        sys.setrecursionlimit(3000)
         dfs(0, 0, [], capacity, value_bound)
 
         # get the optimal value and taken
