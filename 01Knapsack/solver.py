@@ -5,15 +5,16 @@ from collections import namedtuple
 Item = namedtuple("Item", ['index', 'value', 'weight'])
 
 def solve_it(input_data):
-    # Modify this code to run your optimization algorithm
 
     # parse the input
     lines = input_data.split('\n')
 
     firstLine = lines[0].split()
+    global item_count, capacity
     item_count = int(firstLine[0])
     capacity = int(firstLine[1])
 
+    global items
     items = []
 
     for i in range(1, item_count+1):
@@ -21,14 +22,83 @@ def solve_it(input_data):
         parts = line.split()
         items.append(Item(i-1, int(parts[0]), int(parts[1])))
 
-    # show the capaicty and number of items
+    # show the capaicty and the number of items
+    print('\n')
     print('Capacity:', str(capacity))
     print('Number of Items:', str(item_count))
 
-    if item_count > 5000:
-        # a trivial greedy algorithm for filling the knapsack
-        # it takes items in-order until the knapsack is full
-        print('Using greedy algorithm...')
+    # a dynamic programming algorithm for filling the knapsack
+    if item_count * capacity <= 100000000:
+        print('Using dynamic programming...')
+
+        # initialize a table
+        import numpy as np
+        dp_table = np.zeros((capacity+1, item_count+1))
+
+        # fill the table
+        for i in range(1, item_count+1):
+            # when the weight of the item is greater than the capicity
+            if items[i-1].weight > capacity:
+                dp_table[:, i] = dp_table[:, i-1]
+            # when the weight of the item is less than or equal to the capicity
+            else:
+                # the remain capicity cannot satisfy the item
+                dp_table[:items[i-1].weight, i] = dp_table[:items[i-1].weight, i-1]
+                # the remain capicity can satisfy the item
+                dp_table[items[i-1].weight:, i] = np.maximum(dp_table[items[i-1].weight:, i-1], \
+                                                             items[i-1].value+dp_table[:-items[i-1].weight, i-1])
+
+        # get the opitimal value
+        value = int(dp_table[-1, -1])
+
+        # initialize the taken list
+        taken = [0] * item_count
+
+        # trace back
+        remain_weight = capacity
+        for i in range(1, item_count+1):
+            # when the weight between previous and current is different, the item should be taken
+            if dp_table[remain_weight, -i] != dp_table[remain_weight, -i-1]:
+                taken[-i] = 1
+                remain_weight -= items[-i].weight
+
+        # prepare the solution in the specified output format
+        output_data = str(value) + ' ' + str(0) + '\n'
+        output_data += ' '.join(map(str, taken))
+        return output_data
+
+    # a branch&bound algorithm for filling the knapsack
+    print('Using branch and bound...')
+
+    # sort items by value density for relaxation
+    items.sort(key=lambda item: item.value / item.weight, reverse=True)
+
+    # initialize the branches count
+    global branch_count
+    branch_count = 0
+
+    # initialize the value and taken
+    global max_value, max_items
+    max_value = 0
+    max_items = []
+    value_bound = relaxation(0, 0, capacity)
+#    value_bound = 0 # no relaxation
+#    for item in items:
+#        value_bound += item.value
+
+    # depth-first search
+    try:
+        dfs(0, 0, [], capacity, value_bound)
+
+        # get the optimal value and taken
+        value = max_value
+        taken = [0] * item_count
+        for item in max_items:
+            taken[item] = 1
+
+    # a trivial greedy algorithm for filling the knapsack when stack overflow
+    except:
+        print('Stack overflow! Using greedy algorithm...')
         value = 0
         weight = 0
         taken = [0] * item_count
@@ -40,74 +110,82 @@ def solve_it(input_data):
                 weight += item.weight
 
     # prepare the solution in the specified output format
-        output_data = str(value) + ' ' + str(0) + '\n'
-        output_data += ' '.join(map(str, taken))
-        return output_data
-
-    # a dynamic programming algorithm for filling the knapsack
-    # use PyTables to store large matrix
-    print('Using dynamic programming...')
-    import tables as tb
-    import numpy as np
-    store = 'store.h5'
-    filters = tb.Filters(complevel=5, complib='blosc') # use BLOSC compression
-    hdf5_file = tb.open_file(store, mode='w')
-    dp_table = hdf5_file.create_carray(hdf5_file.root, 'data',
-                                      tb.Int32Atom(),
-                                      shape=(capacity+1, item_count+1),
-                                      filters=filters)
-
-    # initialize the first column
-    prev = dp_table[:, 0] = np.zeros(capacity+1)
-    cur = np.empty(capacity+1)
-
-    # fill the table
-    for i in range(1, item_count+1):
-        # when the weight of the item is greater than the capacity
-        if items[i-1].weight > capacity:
-            cur = prev
-        # when the weight of the item is less than or equal to the capacity
-        else:
-            # the remain capacity cannot satisfy the item
-            cur[:items[i-1].weight] = prev[:items[i-1].weight]
-            # the remain capacity can satisfy the item
-            cur[items[i-1].weight:] = np.maximum(prev[items[i-1].weight:], \
-                                                 items[i-1].value+prev[:-items[i-1].weight])
-        dp_table[:, i] = cur
-        prev = cur
-
-        # show the remaining items
-        if (item_count - i) % 100 == 0:
-            print('{} items remain...'.format(item_count-i))
-
-    # close the file
-    hdf5_file.close()
-
-    # read the file
-    read_hdf5_file = tb.open_file(store, mode='r')
-    dp_table = read_hdf5_file.root.data
-
-    # get the opitimal value
-    value = int(dp_table[-1, -1])
-
-    # initialize the taken list
-    taken = [0] * item_count
-
-    # trace back
-    remain_weight = capacity
-    for i in range(1, item_count+1):
-        # when the weight between previous and current is different, the item should be taken
-        if dp_table[remain_weight, -i] != dp_table[remain_weight, -i-1]:
-            taken[-i] = 1
-            remain_weight -= items[-i].weight
-
-    # close the file
-    read_hdf5_file.close()
-
-    # prepare the solution in the specified output format
     output_data = str(value) + ' ' + str(0) + '\n'
     output_data += ' '.join(map(str, taken))
     return output_data
+
+# define a depth-first search for branch&bound
+def dfs(i, cur_value, cur_items, remain_weight, value_bound):
+
+    global branch_count
+    global max_value, max_items
+
+    # check the feasibility
+    if remain_weight < 0:
+#        print('---', remain_weight, '---')
+        branch_count += 1
+        if (branch_count % 100000000) == 0:
+            print('{} branches has been calculated...'.format(branch_count))
+        return
+
+#    print(cur_value, remain_weight, value_bound)
+
+    # prune branch with bound
+    if value_bound < max_value:
+        branch_count += 1
+        if (branch_count % 100000000) == 0:
+            print('{} branches has been calculated...'.format(branch_count))
+        return
+
+    # update the current feasible max value
+    if cur_value >= max_value:
+        max_value, max_items = cur_value, cur_items
+
+    # stop when all of items are used
+    if i == item_count:
+        branch_count += 1
+        if (branch_count % 100000000) == 0:
+            print('{} branches has been calculated...'.format(branch_count))
+        return
+
+    # take the item
+    dfs(i+1, cur_value+items[i].value, cur_items[:]+[items[i].index], remain_weight-items[i].weight, value_bound)
+
+    # do not take the item
+    relaxation_bound = relaxation(i+1, cur_value, remain_weight)
+    dfs(i+1, cur_value, cur_items, remain_weight, relaxation_bound)
+#    dfs(i+1, cur_value, cur_items, remain_weight, value_bound-items[i].value) # no relaxation
+
+def relaxation(i, cur_value, remain_weight):
+
+    # initialize
+    cur_weight = 0
+    relaxation_bound = cur_value
+    weight_add = value_add = 0
+
+#    print('Basic:', i, cur_value)
+
+    # fill the capacity with heighest value density
+    while cur_weight + weight_add <= remain_weight:
+
+        cur_weight += weight_add
+        relaxation_bound += value_add
+
+        # when all of items are used
+        if i == item_count:
+            return relaxation_bound
+
+        else:
+            weight_add = items[i].weight
+            value_add = items[i].value
+            i += 1
+#            print('Add:', i, value_add)
+
+
+    # fill by fraction
+    relaxation_bound += (remain_weight - cur_weight) * value_add / weight_add
+
+    return relaxation_bound
 
 if __name__ == '__main__':
     import sys
