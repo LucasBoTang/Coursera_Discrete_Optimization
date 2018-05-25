@@ -126,7 +126,7 @@ def dfs(i, cur_value, cur_items, remain_weight, value_bound):
     if remain_weight < 0:
 #        print('---', remain_weight, '---')
         branch_count += 1
-        if (branch_count % 100000000) == 0:
+        if (branch_count % 10000000) == 0:
             print('{} branches has been calculated...'.format(branch_count))
         return
 
@@ -135,7 +135,7 @@ def dfs(i, cur_value, cur_items, remain_weight, value_bound):
     # prune branch with bound
     if value_bound < max_value:
         branch_count += 1
-        if (branch_count % 100000000) == 0:
+        if (branch_count % 10000000) == 0:
             print('{} branches has been calculated...'.format(branch_count))
         return
 
@@ -146,7 +146,7 @@ def dfs(i, cur_value, cur_items, remain_weight, value_bound):
     # stop when all of items are used
     if i == item_count:
         branch_count += 1
-        if (branch_count % 100000000) == 0:
+        if (branch_count % 10000000) == 0:
             print('{} branches has been calculated...'.format(branch_count))
         return
 
