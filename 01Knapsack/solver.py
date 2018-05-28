@@ -4,6 +4,8 @@
 from collections import namedtuple
 Item = namedtuple("Item", ['index', 'value', 'weight'])
 
+
+
 def solve_it(input_data):
 
     # parse the input
@@ -116,6 +118,8 @@ def solve_it(input_data):
     output_data += ' '.join(map(str, taken))
     return output_data
 
+
+
 # define a depth-first search for branch&bound
 def dfs(i, cur_value, cur_items, remain_weight, value_bound):
 
@@ -188,6 +192,8 @@ def relaxation(i, cur_value, remain_weight):
     relaxation_bound += (remain_weight - cur_weight) * value_add / weight_add
 
     return relaxation_bound
+
+
 
 if __name__ == '__main__':
     import sys
