@@ -39,7 +39,7 @@ def solve_it(input_data):
     solution = [None] * node_count
     visited = []
 
-    # record number of solutions and calculation
+    # record the number of solutions and calculation
     global solution_count, calculation_count
     solution_count = 0
     calculation_count = 0
