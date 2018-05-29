@@ -53,8 +53,8 @@ def solve_it(input_data):
     print('Using Welsh-Powell algorithm...')
     wp(cur_num, solution, visited, constraints)
 
-    # depth first search for constraint programming
-    print('Using depth-first search...')
+    # depth first search by first fail principle
+    print('Using depth-first search by first fail principle...')
     import sys
     sys.setrecursionlimit(3000)
     dfs(cur_num, solution, visited, constraints)
