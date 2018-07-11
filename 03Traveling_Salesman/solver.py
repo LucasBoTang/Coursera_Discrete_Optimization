@@ -5,6 +5,7 @@ import math
 import numpy as np
 from matplotlib import pyplot as plt
 import random
+import sys
 
 
 
@@ -337,10 +338,7 @@ def swap(solution, obj, t1_index, t4_index):
 
 
 
-import sys
-
 if __name__ == '__main__':
-    import sys
     if len(sys.argv) > 1:
         file_location = sys.argv[1].strip()
         with open(file_location, 'r') as input_data_file:
