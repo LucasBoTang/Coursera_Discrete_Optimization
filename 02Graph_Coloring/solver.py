@@ -1,5 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+import numpy as np
+import random
+import sys
 
 def solve_it(input_data):
     # Modify this code to run your optimization algorithm
@@ -18,7 +21,6 @@ def solve_it(input_data):
     print('Number of Edges:', edge_count)
 
     # build a adjacency matrix of a graph
-    import numpy as np
     global graph, node_degree
     graph = np.zeros((node_count, node_count), dtype='int8')
     node_degree = np.zeros(node_count, dtype='int16')
@@ -55,7 +57,6 @@ def solve_it(input_data):
 
     # depth first search by first fail principle
     print('Using depth-first search by first fail principle...')
-    import sys
     sys.setrecursionlimit(3000)
     dfs(cur_num, solution, visited, constraints)
     if solution_count < 2:
@@ -64,7 +65,6 @@ def solve_it(input_data):
     # randomly restart
     print('Using randomly restarts...')
 
-    import random
     indexes = list(range(node_count))
     restart_count = 0
 
@@ -93,7 +93,6 @@ def solve_it(input_data):
 def wp(cur_num, solution, visited, constraints):
 
     # sort by degree of nodes
-    import numpy as np
     indexes = np.argsort(node_degree)[::-1]
     i = 0
 
@@ -231,7 +230,6 @@ def getSolution(visited, cur_num, solution):
 
 
 if __name__ == '__main__':
-    import sys
     if len(sys.argv) > 1:
         file_location = sys.argv[1].strip()
         with open(file_location, 'r') as input_data_file:
