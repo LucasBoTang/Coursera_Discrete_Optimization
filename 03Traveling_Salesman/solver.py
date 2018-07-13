@@ -31,7 +31,7 @@ def solve_it(input_data):
     # build a distance matrix
     print('Build a distance matrix...')
     global distances
-    distances = DistanceMatirx(points)
+    distances = distanceMatirx(points)
 
     # generate an initial solution by greedy algorithm
     print('Starting with greedy algorithm...')
@@ -80,7 +80,7 @@ def solve_it(input_data):
 
 
 
-def DistanceMatirx(points):
+def distanceMatirx(points):
 
     # initialize the squared matrix
     distances = np.zeros((node_count, node_count))
