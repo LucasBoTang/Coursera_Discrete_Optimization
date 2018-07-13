@@ -94,7 +94,7 @@ def distanceMatirx(points):
     # avoid memory error
     else:
         for i in range(node_count-1):
-            temp = np.array([points[i]] * node_count)
+            temp = np.array([points[i]])
             i_distances = np.sqrt(np.square(temp[i:, 0] - points[i:, 0]) + np.square(temp[i:, 1] - points[i:, 1]))
             distances[i, i:] = i_distances
             distances[i:, i] = i_distances
