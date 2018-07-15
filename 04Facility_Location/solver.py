@@ -113,19 +113,18 @@ def branch_bound(facilities, customers, distances, A_ub, b_ub, A_eq, b_eq, c):
         return
 
     # branch
-    else:
-        new_A_eq = np.zeros((1, facility_count+facility_count*customer_count))
-        new_A_eq[0, fra_var] = 1
-        new_A_eq = np.concatenate((np.array(A_eq), new_A_eq), axis=0)
-        new_A_eq = op.matrix(new_A_eq)
-        # do not take the variable
-        new_b_eq = np.concatenate((np.array(b_eq).T[0], [0]))
-        new_b_eq = op.matrix(new_b_eq)
-        branch_bound(facilities, customers, distances, A_ub, b_ub, new_A_eq, new_b_eq, c)
-        # take the variable
-        new_b_eq = np.concatenate((np.array(b_eq).T[0], [1]))
-        new_b_eq = op.matrix(new_b_eq)
-        branch_bound(facilities, customers, distances, A_ub, b_ub, new_A_eq, new_b_eq, c)
+    new_A_eq = np.zeros((1, facility_count+facility_count*customer_count))
+    new_A_eq[0, fra_var] = 1
+    new_A_eq = np.concatenate((np.array(A_eq), new_A_eq), axis=0)
+    new_A_eq = op.matrix(new_A_eq)
+    # do not take the variable
+    new_b_eq = np.concatenate((np.array(b_eq).T[0], [0]))
+    new_b_eq = op.matrix(new_b_eq)
+    branch_bound(facilities, customers, distances, A_ub, b_ub, new_A_eq, new_b_eq, c)
+    # take the variable
+    new_b_eq = np.concatenate((np.array(b_eq).T[0], [1]))
+    new_b_eq = op.matrix(new_b_eq)
+    branch_bound(facilities, customers, distances, A_ub, b_ub, new_A_eq, new_b_eq, c)
 
 
 def greedy(facilities, customers, distances):
