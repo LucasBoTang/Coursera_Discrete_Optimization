@@ -329,7 +329,7 @@ def getNeighbors(solution, facilities, customers, distances, N):
         cur_obj, cur_solution = greedy(facilities, customers, distances, ban_list)
         neighbors.append([cur_obj, cur_solution])
 
-    # get neighborhood by swapping used and unused facility
+    # get neighborhood by swapping used and unused facilities
     i = 0
     swap_hash = []
     while i < swap_num_1:
@@ -353,7 +353,7 @@ def getNeighbors(solution, facilities, customers, distances, N):
         neighbors.append([cur_obj, cur_solution])
         i += 1
 
-    # get neighborhood by swapping used facility
+    # get neighborhood by swapping used facilities
     i = 0
     swap_hash = []
     while i < swap_num_2:
