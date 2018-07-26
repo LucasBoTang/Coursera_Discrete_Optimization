@@ -6,6 +6,7 @@ import sys
 import numpy as np
 import scipy.spatial.distance as ssd
 from matplotlib import pyplot as plt
+import math
 import random
 
 
@@ -16,7 +17,7 @@ def solve_it(input_data):
     lines = input_data.split('\n')
 
     parts = lines[0].split()
-    global customer_count, vehicle_count, vehicle_capacity
+    global customer_count, vehicle_capacity
     customer_count = int(parts[0])
     vehicle_count = int(parts[1])
     vehicle_capacity = int(parts[2])
@@ -45,31 +46,65 @@ def solve_it(input_data):
     penal = 10 ** (len(str(int(np.max(distances[0])))) + 1) * 2
 
     # generate initial solution
-    initial_generation = initial(demands, distances)
+    initial_generation = initial(demands, distances, vehicle_count)
 
     # use genetic algorithm
     print('Using genetic algorithm...')
     best_generation = set()
-    obj, vehicle_tours, chromesomes = genetic(initial_generation, demands, distances)
+    obj, vehicle_tours, chromesomes = genetic(initial_generation, demands, distances, vehicle_count, True)
     print('best obj: {:2f}'.format(obj))
     best_generation |= chromesomes
 
     # restart
-    for i in range(8):
+    for i in range(3):
         print('Restarting...')
-        cur_obj, cur_vehicle_tours, chromesomes = genetic(initial_generation, demands, distances)
+        initial_generation = initial(demands, distances, vehicle_count)
+        cur_obj, cur_vehicle_tours, chromesomes = genetic(initial_generation, demands, distances, vehicle_count, True)
         best_generation |= chromesomes
 
-        if cur_obj < obj:
+        if obj - cur_obj > 0.01:
+            obj, vehicle_tours = cur_obj, cur_vehicle_tours
+            print('Find a better solution! obj: {:2f}'.format(obj))
+
+    # restart if solution is infeasible
+    while obj == float('inf'):
+        print('Restarting...')
+        initial_generation = initial(demands, distances, vehicle_count)
+        obj, vehicle_tours, chromesomes = genetic(initial_generation, demands, distances, vehicle_count, True)
+
+        if obj < float('inf'):
             obj, vehicle_tours = cur_obj, cur_vehicle_tours
             print('Find a better solution! obj: {:2f}'.format(obj))
 
     # restart with best generation
     print('Restarting with best generation...')
-    cur_obj, cur_vehicle_tours, chromesomes = genetic(best_generation, demands, distances)
-    if cur_obj < obj:
+    cur_obj, cur_vehicle_tours, chromesomes = genetic(best_generation, demands, distances, vehicle_count, True)
+    if obj - cur_obj > 0.01 :
         obj, vehicle_tours = cur_obj, cur_vehicle_tours
         print('Find a better solution! obj: {:2f}'.format(obj))
+
+    # use variable neighborhood search with best solution
+    print('Using variable neighborhood search with best solution...')
+    same_best_count = 0
+    for i in range(min(100, vehicle_count*10)):
+        prev_obj = obj
+        obj, vehicle_tours = vns(obj, vehicle_tours, demands, distances, vehicle_count)
+
+        # count when no better solution
+        if prev_obj - obj < 0.01:
+            same_best_count += 1
+        else:
+            same_best_count = 0
+
+        # visualize
+        if i % 10 == 0：
+            visualize(vehicle_tours, x_coordinations, y_coordinations)
+
+        # stop when converge
+        if same_best_count > 8 and i > min(vehicle_count*2, 12):
+            print('Cannot find a better one!')
+            break
+
 
     # check feasibility
     if len(vehicle_tours) > vehicle_count:
@@ -97,17 +132,21 @@ def distanceMatirx(x_coordinations, y_coordinations):
 
 
 
-def initial(demands, distances):
+def initial(demands, distances, vehicle_count):
 
     initial_generation = set()
 
-    chromesome = greedy(demands, distances, 0)
+    chromesome = greedy(demands, distances, 0, vehicle_count)
     initial_generation.add(chromesome)
+
+    for _ in range(4):
+        chromesome = greedy(demands, distances, 0.2, vehicle_count)
+        initial_generation.add(chromesome)
 
     return initial_generation
 
 
-def greedy(demands, distances, probability):
+def greedy(demands, distances, probability, vehicle_count):
 
     # initialize solution
     obj = 0
@@ -160,12 +199,13 @@ def greedy(demands, distances, probability):
 
 
 
-def genetic(initial_generation, demands, distances):
+def genetic(initial_generation, demands, distances, vehicle_count, claim):
 
     # initialize parameters
-    G = 300 # steps of generations
-    P = 240 # size of population
-    S = 200 # number of survivals
+    chromesome_len = len(list(initial_generation)[0])
+    G = 150 # steps of generations
+    P = min(120, math.factorial(chromesome_len)) # size of population
+    S = min(100, math.factorial(chromesome_len)) # number of survivals
     pc = 0.95 # probability of crossover
     pm = 0.2 # probability of mutation
 
@@ -181,10 +221,10 @@ def genetic(initial_generation, demands, distances):
     worst_objs = []
 
     # stop when solution is converge and steps of generations achive the goal
-    while g < G or same_best_count < 50:
+    while g < G or same_best_count < 80:
 
         # decode to get phenotype
-        phenotype_genotype = getPhenotype(generation, demands, distances)
+        phenotype_genotype = getPhenotype(generation, demands, distances, vehicle_count)
         best_objs.append(phenotype_genotype[0][0])
         medium_objs.append(phenotype_genotype[P//2][0])
         worst_objs.append(phenotype_genotype[-1][0])
@@ -200,7 +240,7 @@ def genetic(initial_generation, demands, distances):
         phenotype_genotype = phenotype_genotype[:S]
 
         # generate offsprings
-        generation = offspringGenerate(phenotype_genotype, P, pc, pm)
+        generation = offspringGenerate(phenotype_genotype, P, pc, pm, vehicle_count)
 
         # apply elitism
         for i in range(5):
@@ -208,41 +248,42 @@ def genetic(initial_generation, demands, distances):
 
         # count generations
         g += 1
-        if g % 200 == 0:
+        if claim and g % 200 == 0:
             print('{} generations...'.format(g))
 
     # decode the last generation
-    phenotype_genotype = getPhenotype(generation, demands, distances)
+    phenotype_genotype = getPhenotype(generation, demands, distances, vehicle_count)
     best_objs.append(phenotype_genotype[0][0])
     medium_objs.append(phenotype_genotype[P//2][0])
     worst_objs.append(phenotype_genotype[-1][0])
     g += 1
 
     # visualize obj for each generations
-    plt.ion()
-    plt.xlabel("Generation")
-    plt.ylabel("Cost")
-    plt.plot(range(g), best_objs, c='g')
-    plt.plot(range(g), medium_objs, c='y')
-    plt.plot(range(g), worst_objs, c='r')
-    plt.pause(5)
-    plt.close()
+    if claim:
+        plt.ion()
+        plt.xlabel("Generation")
+        plt.ylabel("Cost")
+        plt.plot(range(g), best_objs, c='g', lw=1)
+        plt.plot(range(g), medium_objs, c='y', lw=1)
+        plt.plot(range(g), worst_objs, c='r', lw=1)
+        plt.pause(5)
+        plt.close()
 
     # avoid infeasible
     i = 0
     while len(phenotype_genotype[i][1]) > vehicle_count:
-        print('Infeasible! Move to the next one...')
         i += 1
-        if i == customer_count:
-            return float('inf'), phenotype_genotype[i][1], set([individual[2] for individual in phenotype_genotype[:30]])
+        if i == S:
+            print('All individuals are infeasible!')
+            return float('inf'), phenotype_genotype[0][1], set()
 
-    return phenotype_genotype[i][0], phenotype_genotype[i][1], set([individual[2] for individual in phenotype_genotype[:30]])
+    return phenotype_genotype[i][0], phenotype_genotype[i][1], set([individual[2] for individual in phenotype_genotype[:S//5]])
 
 
 
 def generationInitialze(initial_generation, P):
 
-    lst = list(range(1, customer_count))
+    lst = list(list(initial_generation)[0])
 
     while len(initial_generation) < P:
         random.shuffle(lst)
@@ -253,14 +294,14 @@ def generationInitialze(initial_generation, P):
 
 
 
-def getPhenotype(generation, demands, distances):
+def getPhenotype(generation, demands, distances, vehicle_count):
 
     # initial array
     phenotype_genotype = []
 
     # decode chromesome
     for chromesome in generation:
-        obj, vehicle_tours = decode(chromesome, demands, distances)
+        obj, vehicle_tours = decode(chromesome, demands, distances, vehicle_count)
         phenotype_genotype.append([obj, vehicle_tours, chromesome])
 
     # sort obj
@@ -270,7 +311,7 @@ def getPhenotype(generation, demands, distances):
 
 
 
-def decode(chromesome, demands, distances):
+def decode(chromesome, demands, distances, vehicle_count):
 
     # initial vehicle tour
     vehicle_tours = []
@@ -318,7 +359,7 @@ def decode(chromesome, demands, distances):
 
 
 
-def offspringGenerate(phenotype_genotype, P, pc, pm):
+def offspringGenerate(phenotype_genotype, P, pc, pm, vehicle_count):
 
     # calculate fitness by inversing obj
     fitnesses = 1 / np.array([individual[0] for individual in phenotype_genotype])
@@ -350,7 +391,6 @@ def offspringGenerate(phenotype_genotype, P, pc, pm):
         offsprings.add(offspring2)
 
     return offsprings
-
 
 
 
@@ -422,6 +462,56 @@ def mutate(offspring):
 
 
 
+def vns(obj, vehicle_tours, demands, distances, k_max):
+
+    # initialize
+    k = 1
+    routes = []
+    chromesome = tuple()
+    part_obj = 0
+
+    # choose a route randomly
+    route = random.randint(0, k_max-1)
+    # avoid first route is unused or have less than two customers
+    while len(vehicle_tours[route]) <= 4:
+        route = random.randint(0, k_max-1)
+
+    while k < k_max:
+
+        # avoid choose same route
+        while route in routes:
+            route = random.randint(0, k_max-1)
+
+        routes.append(route)
+        # get chromesome and obj of chosen part
+        chromesome += tuple(vehicle_tours[route][1:-1])
+        part_obj += decode(tuple(vehicle_tours[route]), demands, distances, 1)[0]
+
+        # generate initial generation
+        initial_generation = set()
+        initial_generation.add(chromesome)
+
+        # search by genetic algorithm
+        cur_part_obj, cur_vehicle_tours, _ = genetic(initial_generation, demands, distances, k, False)
+
+        # stop when a better solution
+        if part_obj - cur_part_obj > 0.01:
+            # update obj
+            obj = obj - part_obj + cur_part_obj
+            # update current routes
+            for i in range(k):
+                vehicle_tours[routes[i]] = cur_vehicle_tours[i]
+            print('Find a better solution! obj: {:2f}'.format(obj))
+
+            return obj, vehicle_tours
+
+        k += 1
+
+    # when no better solution
+    return obj, vehicle_tours
+
+
+
 def visualize(vehicle_tours, x_coordinations, y_coordinations):
 
     plt.ion()
@@ -430,7 +520,7 @@ def visualize(vehicle_tours, x_coordinations, y_coordinations):
     # use different colors
     color_list = ['b', 'c', 'g', 'm', 'r', 'y']
 
-    for v in range(vehicle_count):
+    for v in range(len(vehicle_tours)):
         # get x and y
         x = []
         y = []
@@ -442,7 +532,7 @@ def visualize(vehicle_tours, x_coordinations, y_coordinations):
         plt.plot(x, y, c=color_list[v%6], ls="-", lw=0.5, marker='.', ms=8, alpha = 0.8)
 
     # plot depot
-    plt.scatter(x_coordinations[0], y_coordinations[0], c='k', marker='p', s=50)
+    plt.scatter(x_coordinations[0], y_coordinations[0], c='k', marker='p', s=100)
 
     plt.pause(15)
     plt.close()
