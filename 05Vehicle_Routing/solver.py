@@ -97,7 +97,7 @@ def solve_it(input_data):
             same_best_count = 0
 
         # visualize
-        if i % 10 == 0：
+        if i % 10 == 0:
             visualize(vehicle_tours, x_coordinations, y_coordinations)
 
         # stop when converge
