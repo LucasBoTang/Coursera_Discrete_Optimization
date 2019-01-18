@@ -3,33 +3,33 @@
 ## 01 Knapsack Problem
 
 Method:
-- dynamic programming
-- branch and bound
-- greedy heuristic
+- Dynamic Programming
+- Branch and Bound
+- Greedy Heuristic
 
 ## 02 Graph Coloring Problem
 
 Method:
-- dfs
-- constraint programming
+- Depth First Search
+- Constraint Programming
 
 ## 03 Traveling Salesman Problem
 
 Method:
 - Simulated Annealing
-- k opt
+- K Opt
 - Visualization
 
 ## 04 Facility Location Problem
 
 Method:
-- branch and bound
-- tabu search
+- Branch and Bound
+- Tabu Search
 - Visualization
 
 ## 05 Vehicle Routing Problem
 
 Method:
-- genetic algorithm
-- variable neighborhood search
+- Genetic Algorithm
+- Variable Neighborhood Search
 - Visualization
