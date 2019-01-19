@@ -1,4 +1,4 @@
-# Discrete Optimization
+# Discrete Optimization Solver
 
 ## 01 Knapsack Problem
 
