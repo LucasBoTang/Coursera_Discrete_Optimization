@@ -31,5 +31,6 @@ Method:
 
 Method:
 - Genetic Algorithm
+- 2 Opt
 - Variable Neighborhood Search
 - Visualization
