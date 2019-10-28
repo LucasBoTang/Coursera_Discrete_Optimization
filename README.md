@@ -20,12 +20,16 @@ Method:
 - K Opt
 - Visualization
 
+<p align="center"><img width="100%" src="03Traveling_Salesman/TSP.jpg" /></p>
+
 ## 04 Facility Location Problem
 
 Method:
 - Branch and Bound
 - Tabu Search
 - Visualization
+
+<p align="center"><img width="100%" src="04Facility_Location/Facility_Location.jpg" /></p>
 
 ## 05 Vehicle Routing Problem
 
@@ -34,3 +38,5 @@ Method:
 - 2 Opt
 - Variable Neighborhood Search
 - Visualization
+
+<p align="center"><img width="100%" src="05Vehicle_Routing/VRP.jpg" /></p>
